@@ -1,0 +1,10 @@
+{
+  "name": "gokyo-judo-throws",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The 68 throws of Kodokan Judo — reference, notes, and YouTube video finder",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Static site — nothing to build. Serve the project root.'"
+  }
+}
