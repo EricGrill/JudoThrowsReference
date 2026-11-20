@@ -1,0 +1,24 @@
+name: jiujitsu-reference
+services:
+  reference:
+    image: jiujitsu-reference:${RELEASE:?Set RELEASE to the deployed git commit}
+    build:
+      context: ..
+    container_name: jiujitsu-reference
+    restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 192m
+    cpus: 0.5
+    networks:
+      bjj:
+        aliases:
+          - jiujitsu-reference
+networks:
+  bjj:
+    external: true
+    name: bjjchat_bjj-network

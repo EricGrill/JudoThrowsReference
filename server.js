@@ -3,8 +3,7 @@
 //
 // GET /api/search?q=<query>
 //   Returns { videos: [{ id, title, channel }] } from a real YouTube search.
-//   Strategy: (1) scrape YouTube's results page server-side (no API key, no CORS),
-//   (2) fall back to public Piped / Invidious instances.
+//   Fetch YouTube results with a bounded timeout; the browser always offers a direct link.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -82,7 +81,7 @@ async function searchViaYouTubeHTML(q) {
   const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
   const res = await fetch(url, {
     headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9", Cookie: "CONSENT=YES+1" },
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error("YouTube HTTP " + res.status);
   const html = await res.text();
@@ -101,84 +100,80 @@ async function searchViaYouTubeHTML(q) {
   return unique;
 }
 
-// ---------- Piped / Invidious fallbacks ----------
-const PIPED = ["https://adminforge.de", "https://pipedapi.adminforge.de", "https://api.piped.private.coffee"];
-const INVIDIOUS = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de", "https://yewtu.be"];
-
-async function searchViaPiped(base, q) {
-  const res = await fetch(`${base}/api/v1/search?q=${encodeURIComponent(q)}&filter=videos`, {
-    headers: { "User-Agent": UA },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) throw new Error(String(res.status));
-  const data = await res.json();
-  const items = (data.items || data || [])
-    .map((v) => {
-      const m = /[?&]v=([\w-]{11})/.exec(v.url || "");
-      return m ? { id: m[1], title: v.title || "Untitled", channel: v.uploaderName || "" } : null;
-    })
-    .filter(Boolean);
-  if (!items.length) throw new Error("empty");
-  return items;
-}
-
-async function searchViaInvidious(base, q) {
-  const res = await fetch(`${base}/api/v1/search?q=${encodeURIComponent(q)}&type=video`, {
-    headers: { "User-Agent": UA },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) throw new Error(String(res.status));
-  const data = await res.json();
-  const items = (Array.isArray(data) ? data : [])
-    .filter((v) => v.type === "video" && v.videoId)
-    .map((v) => ({ id: v.videoId, title: v.title || "Untitled", channel: v.author || "" }));
-  if (!items.length) throw new Error("empty");
-  return items;
-}
+const searchCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000;
+let activeSearches = 0;
 
 async function handleSearch(req, res) {
-  const q = new URL(req.url, "http://x").searchParams.get("q") || "";
+  const q = (new URL(req.url, "http://x").searchParams.get("q") || "").trim();
   res.setHeader("Content-Type", "application/json; charset=utf-8");
-  if (!q.trim()) {
+  if (!q || q.length > 200) {
     res.writeHead(400);
-    return res.end(JSON.stringify({ error: "missing q" }));
+    return res.end(JSON.stringify({ error: "q must contain 1 to 200 characters" }));
   }
-  const attempts = [
-    () => searchViaYouTubeHTML(q),
-    ...PIPED.map((b) => () => searchViaPiped(b, q)),
-    ...INVIDIOUS.map((b) => () => searchViaInvidious(b, q)),
-  ];
-  for (const attempt of attempts) {
-    try {
-      const videos = await attempt();
-      return res.end(JSON.stringify({ videos: videos.slice(0, 12) }));
-    } catch {
-      /* next strategy */
-    }
+  const cached = searchCache.get(q);
+  if (cached && cached.expires > Date.now()) {
+    return res.end(JSON.stringify({ videos: cached.videos }));
   }
-  res.writeHead(502);
-  res.end(JSON.stringify({ error: "all search backends failed" }));
+  if (activeSearches >= 20) {
+    res.writeHead(503, { "Retry-After": "10" });
+    return res.end(JSON.stringify({ error: "search is busy; use the YouTube link" }));
+  }
+  activeSearches++;
+  try {
+    const videos = (await searchViaYouTubeHTML(q)).slice(0, 12);
+    if (searchCache.size >= 100) searchCache.delete(searchCache.keys().next().value);
+    searchCache.set(q, { videos, expires: Date.now() + CACHE_TTL });
+    res.end(JSON.stringify({ videos }));
+  } catch {
+    res.writeHead(502);
+    res.end(JSON.stringify({ error: "video search unavailable; use the YouTube link" }));
+  } finally {
+    activeSearches--;
+  }
 }
 
-// ---------- static + api ----------
-http
-  .createServer((req, res) => {
-    const urlPath = decodeURIComponent(new URL(req.url, "http://x").pathname);
-    if (urlPath === "/api/search") return handleSearch(req, res);
+// Only these files are public. Repository files and server code are never served.
+const PUBLIC_FILES = new Set([
+  "/index.html", "/src/main.js", "/src/throws.js", "/favicon.svg",
+  "/robots.txt", "/sitemap.xml",
+]);
 
-    let filePath = urlPath === "/" ? "/index.html" : urlPath;
-    const file = path.normalize(path.join(ROOT, filePath));
-    if (!file.startsWith(ROOT)) {
-      res.writeHead(403);
-      return res.end("Forbidden");
+http.createServer((req, res) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  let urlPath;
+  try {
+    urlPath = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  } catch {
+    res.writeHead(400);
+    return res.end("Bad request");
+  }
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" });
+    return res.end("Method not allowed");
+  }
+  if (urlPath === "/api/search") {
+    if (req.method === "HEAD") {
+      res.writeHead(405, { Allow: "GET" });
+      return res.end();
     }
-    fs.readFile(file, (err, data) => {
-      if (err) {
-        res.writeHead(404);
-        return res.end("Not found");
-      }
-      res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
-      res.end(data);
-    });
-  })
-  .listen(PORT, HOST, () => console.log(`Gokyo app → http://localhost:${PORT}/`));
+    return handleSearch(req, res);
+  }
+  const filePath = urlPath === "/" ? "/index.html" : urlPath;
+  if (!PUBLIC_FILES.has(filePath)) {
+    res.writeHead(404);
+    return res.end("Not found");
+  }
+  fs.readFile(path.join(ROOT, filePath), (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      return res.end("Not found");
+    }
+    const contentType = filePath.endsWith(".xml") ? "application/xml; charset=utf-8"
+      : filePath.endsWith(".txt") ? "text/plain; charset=utf-8"
+      : MIME[path.extname(filePath)];
+    res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "public, max-age=300" });
+    res.end(req.method === "HEAD" ? undefined : data);
+  });
+}).listen(PORT, HOST, () => console.log(`Jiu Jitsu Tools: http://localhost:${PORT}/`));

@@ -12,9 +12,26 @@ const statusEl = $("#video-status");
 const gridEl = $("#video-grid");
 const fallbackEl = $("#yt-fallback");
 
-let currentIndex = Number(localStorage.getItem("gokyo.index")) || 0;
-if (currentIndex < 0 || currentIndex >= THROWS.length) currentIndex = 0;
-let searchToken = 0; // cancels stale video searches
+// Notes remain editable even when the browser blocks persistent storage.
+const sessionValues = new Map();
+function readSaved(key) {
+  if (sessionValues.has(key)) return sessionValues.get(key);
+  try { return localStorage.getItem(key); }
+  catch { return null; }
+}
+function writeSaved(key, value) {
+  sessionValues.set(key, value);
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+    return true;
+  } catch { return false; }
+}
+
+let currentIndex = Number(readSaved("gokyo.index")) || 0;
+if (!Number.isInteger(currentIndex) || currentIndex < 0 || currentIndex >= THROWS.length) currentIndex = 0;
+let searchToken = 0; // prevents stale results from replacing the current throw
+let searchController;
 
 // ---------- dropdown ----------
 function buildOptions(filter = "") {
@@ -28,7 +45,7 @@ function buildOptions(filter = "") {
     t.set.toLowerCase().includes(q)
   );
   if (matches.length === 0) {
-    const opt = new Option("No throws match — clear the filter", "");
+    const opt = new Option("No throws match - clear the filter", "");
     selectEl.appendChild(opt);
     return;
   }
@@ -38,7 +55,7 @@ function buildOptions(filter = "") {
     const og = document.createElement("optgroup");
     og.label = setName;
     for (const t of group) {
-      const opt = new Option(`${t.name} — ${t.en}`, t.id);
+      const opt = new Option(`${t.name} - ${t.en}`, t.id);
       og.appendChild(opt);
     }
     selectEl.appendChild(og);
@@ -54,7 +71,7 @@ function esc(s) {
 
 function renderDetail() {
   const t = THROWS[currentIndex];
-  const note = localStorage.getItem("gokyo.note." + t.id) || "";
+  const note = readSaved("gokyo.note." + t.id) || "";
   detailEl.innerHTML = `
     <div class="detail-head">
       <div class="kanji" lang="ja">${t.kanji}</div>
@@ -66,30 +83,24 @@ function renderDetail() {
           <span class="badge type">${esc(t.type)}</span>
           ${t.banned ? `<span class="badge ban">Banned in competition</span>` : ""}
         </div>
-        ${t.banned ? `<div class="ban-note">Kinshi-waza: forbidden in IJF competition because of injury risk. Train it, don't compete with it.</div>` : ""}
+        ${t.banned ? `<div class="ban-note">Kinshi-waza: forbidden in IJF competition because of injury risk. Discuss safe alternatives with your coach.</div>` : ""}
       </div>
     </div>
     <h3 class="section-title">What it is</h3>
     <p class="desc">${esc(t.desc)}</p>
     <h3 class="section-title">Key points</h3>
     <ul class="tips">${t.tips.map((tip) => `<li>${esc(tip)}</li>`).join("")}</ul>
-    <h3 class="section-title">My notes <span style="font-weight:400;letter-spacing:0;text-transform:none">(saved in this browser)</span></h3>
+    <h3 class="section-title"><label for="note-box">My notes</label> <span style="font-weight:400;letter-spacing:0;text-transform:none">(saved in this browser)</span></h3>
     <div class="notes">
       <textarea id="note-box" placeholder="Drills, grips, combos, who hit it on you…">${esc(note)}</textarea>
-      <div class="savestate" id="note-state"></div>
+      <div class="savestate" id="note-state" role="status"></div>
     </div>
   `;
   const box = $("#note-box");
   const state = $("#note-state");
-  let timer;
   box.addEventListener("input", () => {
-    state.textContent = "…";
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (box.value.trim()) localStorage.setItem("gokyo.note." + t.id, box.value);
-      else localStorage.removeItem("gokyo.note." + t.id);
-      state.textContent = "Saved.";
-    }, 500);
+    const saved = writeSaved("gokyo.note." + t.id, box.value.trim() ? box.value : "");
+    state.textContent = saved ? "Saved in this browser." : "Browser storage is unavailable. Notes last only until this page closes.";
   });
 }
 
@@ -98,7 +109,7 @@ function selectThrow(id, { autoSearch = true } = {}) {
   const idx = THROWS.findIndex((t) => t.id === id);
   if (idx < 0) return;
   currentIndex = idx;
-  localStorage.setItem("gokyo.index", String(idx));
+  writeSaved("gokyo.index", String(idx));
   selectEl.value = id;
   renderDetail();
   updateQueryPreview();
@@ -116,93 +127,23 @@ function buildQuery(t, ctx) {
 }
 
 // ---------- video search ----------
-// YouTube blocks embedding its search page, so results are fetched through
-// public Piped / Invidious instances (no API key). If all are unreachable,
-// we fall back to a direct YouTube search link.
-const PIPED = [
-  "https://pipedapi.kavin.rocks",
-  "https://api.piped.private.coffee",
-  "https://pipedapi.adminforge.de",
-  "https://pipedapi.reallyaweso.me",
-  "https://pipedapi.leptons.xyz",
-  "https://pipedapi.r4fo.com",
-];
-const INVIDIOUS = [
-  "https://inv.nadeko.net",
-  "https://yewtu.be",
-  "https://invidious.nerdvpn.de",
-  "https://iv.melmac.space",
-  "https://invidious.f5.si",
-];
-
-function withTimeout(ms) {
-  const c = new AbortController();
-  const t = setTimeout(() => c.abort(), ms);
-  return { signal: c.signal, done: () => clearTimeout(t) };
-}
-
-async function tryPiped(base, q) {
-  const { signal, done } = withTimeout(8000);
-  try {
-    const res = await fetch(`${base}/api/v1/search?q=${encodeURIComponent(q)}&filter=videos`, { signal });
-    if (!res.ok) throw new Error(String(res.status));
-    const data = await res.json();
-    const items = (data.items || data || [])
-      .map((v) => {
-        const m = /[?&]v=([\w-]{11})/.exec(v.url || "");
-        return m ? { id: m[1], title: v.title || "Untitled", channel: v.uploaderName || "" } : null;
-      })
-      .filter(Boolean);
-    if (!items.length) throw new Error("empty");
-    return items;
-  } finally {
-    done();
-  }
-}
-
-async function tryInvidious(base, q) {
-  const { signal, done } = withTimeout(8000);
-  try {
-    const res = await fetch(`${base}/api/v1/search?q=${encodeURIComponent(q)}&type=video`, { signal });
-    if (!res.ok) throw new Error(String(res.status));
-    const data = await res.json();
-    const items = (Array.isArray(data) ? data : [])
-      .filter((v) => v.type === "video" && v.videoId)
-      .map((v) => ({ id: v.videoId, title: v.title || "Untitled", channel: v.author || "" }));
-    if (!items.length) throw new Error("empty");
-    return items;
-  } finally {
-    done();
-  }
-}
-
-async function tryProxy(q) {
-  const { signal, done } = withTimeout(15000);
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal });
-    if (!res.ok) throw new Error(String(res.status));
-    const data = await res.json();
-    if (!Array.isArray(data.videos) || !data.videos.length) throw new Error("empty");
-    return data.videos;
-  } finally {
-    done();
-  }
-}
-
+// One bounded same-origin request; the direct YouTube link is always available.
 async function searchVideos(q) {
-  const attempts = [
-    () => tryProxy(q), // same-origin dev-server proxy (scrapes YouTube server-side)
-    ...PIPED.map((b) => () => tryPiped(b, q)),
-    ...INVIDIOUS.map((b) => () => tryInvidious(b, q)),
-  ];
-  for (const attempt of attempts) {
-    try {
-      return await attempt();
-    } catch {
-      /* next instance */
-    }
-  }
-  return null;
+  searchController?.abort();
+  const controller = new AbortController();
+  searchController = controller;
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data.videos)) return null;
+    const videos = data.videos.filter((video) =>
+      /^[A-Za-z0-9_-]{11}$/.test(video.id) && typeof video.title === "string"
+    ).map((video) => ({ ...video, channel: typeof video.channel === "string" ? video.channel : "" }));
+    return videos.length ? videos : null;
+  } catch { return null; }
+  finally { clearTimeout(timer); }
 }
 
 function renderVideos(videos, t, ctx) {
@@ -234,7 +175,9 @@ async function findVideos() {
   updateQueryPreview();
   findBtn.disabled = true;
   gridEl.innerHTML = "";
-  fallbackEl.hidden = true;
+  const ytUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+  fallbackEl.hidden = false;
+  fallbackEl.innerHTML = `<a href="${ytUrl}" target="_blank" rel="noopener">Open “${esc(q)}” on YouTube</a>`;
   statusEl.className = "video-status show";
   statusEl.innerHTML = `<span class="spinner"></span>Searching YouTube for “${esc(q)}”…`;
 
@@ -242,15 +185,12 @@ async function findVideos() {
   if (token !== searchToken) return; // a newer search superseded this one
   findBtn.disabled = false;
 
-  const ytUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
   if (videos) {
-    statusEl.innerHTML = `${videos.length >= 6 ? "Top 6" : videos.length} result${videos.length === 1 ? "" : "s"} for <strong>${esc(t.name)}</strong>${ctx ? ` with “${esc(ctx)}”` : ""} · <a href="${ytUrl}" target="_blank" rel="noopener">open full search on YouTube ↗</a>`;
+    statusEl.innerHTML = `${videos.length >= 6 ? "Top 6" : videos.length} result${videos.length === 1 ? "" : "s"} for <strong>${esc(t.name)}</strong>${ctx ? ` with “${esc(ctx)}”` : ""} · <a href="${ytUrl}" target="_blank" rel="noopener">open full search on YouTube</a>`;
     renderVideos(videos, t, ctx);
   } else {
     statusEl.className = "video-status show error";
-    statusEl.textContent = "Couldn't reach a video search gateway right now.";
-    fallbackEl.hidden = false;
-    fallbackEl.innerHTML = `No embedded results — but YouTube has this search ready: <a href="${ytUrl}" target="_blank" rel="noopener">“${esc(q)}” on YouTube ↗</a>`;
+    statusEl.textContent = "Couldn't load embedded results. Use the YouTube link below.";
   }
 }
 
@@ -268,16 +208,20 @@ filterEl.addEventListener("input", () => {
   }
 });
 
-$("#prev-btn").addEventListener("click", () =>
-  selectThrow(THROWS[(currentIndex - 1 + THROWS.length) % THROWS.length].id)
-);
-$("#next-btn").addEventListener("click", () =>
-  selectThrow(THROWS[(currentIndex + 1) % THROWS.length].id)
-);
+function visibleThrows() {
+  return [...selectEl.options].map((option) => option.value).filter(Boolean);
+}
+function moveThrow(offset) {
+  const ids = visibleThrows();
+  if (!ids.length) return;
+  const position = Math.max(0, ids.indexOf(THROWS[currentIndex].id));
+  selectThrow(ids[(position + offset + ids.length) % ids.length]);
+}
+$("#prev-btn").addEventListener("click", () => moveThrow(-1));
+$("#next-btn").addEventListener("click", () => moveThrow(1));
 $("#random-btn").addEventListener("click", () => {
-  let i = currentIndex;
-  while (i === currentIndex) i = Math.floor(Math.random() * THROWS.length);
-  selectThrow(THROWS[i].id);
+  const ids = visibleThrows().filter((id) => id !== THROWS[currentIndex].id);
+  if (ids.length) selectThrow(ids[Math.floor(Math.random() * ids.length)]);
 });
 
 findBtn.addEventListener("click", findVideos);
@@ -287,7 +231,7 @@ contextEl.addEventListener("keydown", (e) => {
 contextEl.addEventListener("input", updateQueryPreview);
 
 document.addEventListener("keydown", (e) => {
-  if (e.target.matches("input, textarea, select")) return;
+  if (e.target.matches("input, textarea, select, button, a") || e.target.isContentEditable) return;
   if (e.key === "ArrowLeft") $("#prev-btn").click();
   if (e.key === "ArrowRight") $("#next-btn").click();
 });

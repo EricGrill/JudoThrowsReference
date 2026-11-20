@@ -1,52 +1,67 @@
-# Gokyo — The 68 Throws of Kodokan Judo
+# Jiu Jitsu Tools
 
-A personal reference app for every official Kodokan nage-waza: pick a throw,
-read what it is and how it works, and instantly pull up real YouTube videos for
-it — optionally filtered by your own context ("for BJJ", a coach's name, "no gi", …).
+A searchable reference for all 68 Kodokan judo throws, published at
+https://jiujitsutools.com/. Pick a throw, read its description and key points,
+find videos for your training context, and save personal notes in your browser.
 
-## Run
+## Run and verify
 
 ```bash
-npm run dev            # → http://localhost:7100/
-npm run dev -- --port 8000   # custom port/host args are forwarded
+npm start
+npm run dev -- --port 8000 --host 127.0.0.1
+npm test
+npm run check
+npm run build
 ```
 
-No dependencies, no build step. Node 18+ is enough.
+No dependencies or compilation are required. Use Node 24 in production.
+The default port is 7100. Set `PORT` or pass `--port` to override it.
 
 ## Features
 
-- **All 68 official throws** — the Gokyo-no-waza (5 sets of 8), the 8
-  habukareta-waza preserved from the 1895 list, and the 20 shinmeisho-no-waza
-  accepted in 1982/1997, each with kanji, translation, classification,
-  description, and key points. Competition-banned techniques (kani-basami,
-  kawazu-gake) are flagged.
-- **Filter + dropdown + prev/next/random** — keyboard arrows work too.
-- **Context-aware video search** — your context text is merged into the
-  YouTube query (`Seoi-nage judo for BJJ`). Results are embedded in-page;
-  a direct "open full search on YouTube" link is always there as backup.
-- **Personal notes per throw**, saved to `localStorage` (this browser only).
+- All 68 official throws with kanji, translation, classification, descriptions,
+  and key points. Competition-banned techniques are flagged.
+- Filter the catalog and use previous, next, or random within the filtered list.
+- Add video search context such as "for BJJ", "no gi", or a coach's name.
+- Save notes immediately in local storage. If storage is blocked, notes remain
+  available for the current page session and the app explains that limitation.
+- Follow the navigation links to the existing timer and calculators. These
+  routes are provided by the site's existing service behind the production proxy.
 
-## How video search works
+## Video search
 
-YouTube has no keyless search API and blocks embedding its search page, so
-`server.js` exposes `/api/search?q=…` which fetches YouTube's results page
-server-side, parses `ytInitialData`, and returns video IDs/titles/channels
-(with public Piped/Invidious instances as fallback). Opened without the dev
-server, the page still works but shows YouTube search links instead of embeds.
+`GET /api/search?q=...` fetches YouTube's public results page and returns up to
+12 unique video IDs, titles, and channels. Queries are limited to 200 characters;
+upstream requests time out after eight seconds. Successful results are cached
+for five minutes, with at most 100 cached queries and 20 concurrent upstream
+searches per process.
+
+The browser makes one same-origin request with a ten-second timeout and always
+shows a direct YouTube search link immediately. Embedded search is best effort:
+YouTube can block server requests or change its page format. A failed search
+leaves the direct link usable without cycling through public gateways.
+
+The Node server serves an explicit list of public assets. It never exposes Git
+metadata, package files, deployment files, or server source.
 
 ## Structure
 
-```
-index.html      markup + design system (single page)
-src/throws.js   the 68-throw database
-src/main.js     UI + search logic
-server.js       static server + /api/search proxy
+```text
+index.html             markup, design system, and public metadata
+src/throws.js          the 68-throw catalog
+src/main.js            interface, notes, and video search
+server.js              public asset server and bounded search endpoint
+favicon.svg            site icon
+robots.txt             crawler instructions
+sitemap.xml            canonical homepage sitemap
+tests/                 dependency-free browser logic and HTTP tests
+docs/launch-plan.md    bounded implementation and verification plan
 ```
 
 ## Credits
 
-- Throw list and classification follow the Kodokan nage-waza (as documented in
-  Wikipedia's "List of Kodokan judo techniques", CC BY-SA 4.0).
-- Descriptions and key points written for this app.
-- Video results are returned live by YouTube search; all videos belong to
-  their respective channels.
+The throw list and classification follow the Kodokan nage-waza as documented in
+[Wikipedia's List of Kodokan judo techniques](https://en.wikipedia.org/wiki/List_of_Kodokan_judo_techniques),
+licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+Descriptions and key points were written for this app. Videos belong to their
+respective channels. See [LICENSE](LICENSE) for the application code license.

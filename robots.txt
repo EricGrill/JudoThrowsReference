@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jiujitsutools.com/sitemap.xml

@@ -3,7 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gokyo — The 68 Throws of Kodokan Judo</title>
+<title>Jiu Jitsu Tools | The 68 Throws of Kodokan Judo</title>
+<meta name="description" content="Explore all 68 Kodokan judo throws. Find technique videos for BJJ, no-gi, and your training context, and keep personal notes in your browser.">
+<link rel="canonical" href="https://jiujitsutools.com/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#a52b25">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jiu Jitsu Tools | The 68 Throws of Kodokan Judo">
+<meta property="og:description" content="A searchable throw reference with technique videos and personal training notes.">
+<meta property="og:url" content="https://jiujitsutools.com/">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -53,17 +62,21 @@ header.topbar{
   font:600 clamp(26px,4vw,36px)/1.05 var(--font-display);
   letter-spacing:0.04em;text-transform:uppercase;color:var(--text);
 }
+.wordmark .subtitle{flex-basis:100%;font-size:1rem;color:var(--text-2)}
 .wordmark .jp{font:400 clamp(18px,2.4vw,24px)/1 var(--font-jp);color:var(--accent)}
 .topbar .meta{margin-left:auto;text-align:right;color:var(--text-2);font-size:13.5px;line-height:1.5}
 .topbar .meta strong{color:var(--text);font-weight:600}
+
+.tools-nav{max-width:1180px;margin:0 auto;padding:0 24px 18px;display:flex;gap:12px 24px;flex-wrap:wrap;font-size:14px}
+.tools-nav [aria-current]{color:var(--accent);font-weight:600}
 
 /* ---------- controls ---------- */
 .controls{max-width:1180px;margin:0 auto;padding:22px 24px 6px;display:grid;gap:14px}
 .controls-row{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
-.field label{font:600 11px/1 var(--font-display);letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3)}
+.field label{font:600 14px/1.2 var(--font-display);letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3)}
 .field input[type=text],.field select,.field textarea{
-  font:400 15px/1.4 var(--font-body);color:var(--text);
+  font:400 16px/1.4 var(--font-body);color:var(--text);
   background:#fff;border:1px solid var(--line);border-radius:8px;
   padding:10px 12px;transition:border-color .15s ease, box-shadow .15s ease;
 }
@@ -91,7 +104,7 @@ main{max-width:1180px;margin:0 auto;padding:18px 24px 64px;display:grid;gap:24px
   grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
 @media (max-width:960px){main{grid-template-columns:1fr}}
 
-.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+.panel{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
 
 /* ---------- throw detail ---------- */
 .detail-head{display:flex;gap:20px;align-items:flex-start}
@@ -124,7 +137,7 @@ main{max-width:1180px;margin:0 auto;padding:18px 24px 64px;display:grid;gap:24px
 /* ---------- videos ---------- */
 .video-controls{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
 .video-controls .field{flex:1;min-width:220px}
-.query-preview{font-size:13px;color:var(--text-3);margin-top:10px}
+.query-preview{overflow-wrap:anywhere;font-size:13px;color:var(--text-3);margin-top:10px}
 .query-preview code{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:12.5px;color:var(--text-2)}
 .video-status{margin-top:16px;font-size:14px;color:var(--text-2);display:none}
 .video-status.show{display:block}
@@ -133,7 +146,7 @@ main{max-width:1180px;margin:0 auto;padding:18px 24px 64px;display:grid;gap:24px
   border-radius:50%;vertical-align:-2px;margin-right:8px;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.video-grid{margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.video-grid{margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr))}
 .vcard{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface-2)}
 .vcard .frame{aspect-ratio:16/9;background:#000}
 .vcard iframe{width:100%;height:100%;border:0;display:block}
@@ -150,6 +163,12 @@ footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);fo
   .kanji{font-size:44px;padding:10px 14px}
   .topbar .meta{margin-left:0;text-align:left}
   .f-filter{width:100%}
+  .f-throw{min-width:0;flex-basis:100%}
+  .detail-head{flex-wrap:wrap;gap:14px}
+  .panel{padding:18px}
+  .video-controls .field{min-width:0;flex-basis:100%}
+  .topbar-inner,.controls,main{padding-left:16px;padding-right:16px}
+  .wordmark{gap:10px}
 }
 </style>
 </head>
@@ -157,7 +176,8 @@ footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);fo
 <header class="topbar">
   <div class="topbar-inner">
     <div class="wordmark">
-      <h1>The 68 Throws of Kodokan Judo</h1>
+      <h1>Jiu Jitsu Tools</h1>
+      <span class="subtitle">The 68 Throws of Kodokan Judo</span>
       <span class="jp">柔道・投げ技</span>
     </div>
     <div class="meta">
@@ -165,6 +185,13 @@ footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);fo
       Pick a throw, add context, watch it done.
     </div>
   </div>
+  <nav class="tools-nav" aria-label="Training tools">
+    <a href="/" aria-current="page">Throw reference</a>
+    <a href="/training-timer">Training timer</a>
+    <a href="/belt-calculator">Belt calculator</a>
+    <a href="/competition-weight">Competition weight</a>
+    <a href="/gi-size-calculator">Gi size</a>
+  </nav>
 </header>
 
 <div class="controls">
@@ -178,8 +205,8 @@ footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);fo
       <select id="throw-select" size="1"></select>
     </div>
     <div class="navbtns">
-      <button class="btn icon" id="prev-btn" title="Previous throw" aria-label="Previous throw">←</button>
-      <button class="btn icon" id="next-btn" title="Next throw" aria-label="Next throw">→</button>
+      <button class="btn icon" id="prev-btn" title="Previous throw" aria-label="Previous throw">Previous</button>
+      <button class="btn icon" id="next-btn" title="Next throw" aria-label="Next throw">Next</button>
       <button class="btn" id="random-btn">Random</button>
     </div>
   </div>
@@ -195,19 +222,21 @@ footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);fo
     <div class="video-controls">
       <div class="field">
         <label for="context">Your context (optional)</label>
-        <input type="text" id="context" placeholder='e.g. "for BJJ", "Neil Adams", "vs lefty", "no gi"…' autocomplete="off">
+        <input type="text" id="context" maxlength="160" placeholder='e.g. "for BJJ", "Neil Adams", "vs lefty", "no gi"…' autocomplete="off">
       </div>
       <button class="btn primary" id="find-btn">Find videos</button>
     </div>
     <div class="query-preview" id="query-preview"></div>
-    <div class="video-status" id="video-status"></div>
+    <div class="video-status" id="video-status" role="status" aria-live="polite"></div>
     <div class="video-grid" id="video-grid"></div>
     <div class="yt-fallback" id="yt-fallback" hidden></div>
   </section>
 </main>
 
 <footer>
+  <p><strong>Jiu Jitsu Tools</strong> · Study the technique, bring your questions to the mat.</p>
   <p>Throws follow the Kodokan classification: the Gokyo-no-waza (5 sets of 8), the 8 habukareta-waza preserved from the 1895 list, and the 20 shinmeisho-no-waza accepted in 1982 and 1997. Videos are fetched live from YouTube search results; your notes are stored only in this browser.</p>
+  <p>Technique classification: <a href="https://en.wikipedia.org/wiki/List_of_Kodokan_judo_techniques">List of Kodokan judo techniques</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>). <a href="https://github.com/EricGrill/JudoThrowsReference">Source code</a>.</p>
 </footer>
 
 <script type="module" src="./src/main.js"></script>

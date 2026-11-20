@@ -1,0 +1,7 @@
+.git
+test
+tests
+deploy
+node_modules
+.lavish
+*.log
