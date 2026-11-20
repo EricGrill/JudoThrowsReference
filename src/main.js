@@ -76,7 +76,7 @@ function renderDetail() {
     <div class="detail-head">
       <div class="kanji" lang="ja">${t.kanji}</div>
       <div class="detail-names">
-        <h2>${t.name}</h2>
+        <h2 class="display">${t.name}</h2>
         <div class="en">${t.en}</div>
         <div class="badges">
           <span class="badge">${esc(t.set)}</span>
@@ -86,12 +86,12 @@ function renderDetail() {
         ${t.banned ? `<div class="ban-note">Kinshi-waza: forbidden in IJF competition because of injury risk. Discuss safe alternatives with your coach.</div>` : ""}
       </div>
     </div>
-    <h3 class="section-title">What it is</h3>
+    <h3 class="section-title display">What it is</h3>
     <p class="desc">${esc(t.desc)}</p>
-    <h3 class="section-title">Key points</h3>
+    <h3 class="section-title display">Key points</h3>
     <ul class="tips">${t.tips.map((tip) => `<li>${esc(tip)}</li>`).join("")}</ul>
-    <h3 class="section-title"><label for="note-box">My notes</label> <span style="font-weight:400;letter-spacing:0;text-transform:none">(saved in this browser)</span></h3>
-    <div class="notes">
+    <h3 class="section-title display"><label for="note-box">My notes</label> <span class="hint">(saved in this browser)</span></h3>
+    <div class="notes field">
       <textarea id="note-box" placeholder="Drills, grips, combos, who hit it on you…">${esc(note)}</textarea>
       <div class="savestate" id="note-state" role="status"></div>
     </div>
@@ -235,6 +235,16 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") $("#prev-btn").click();
   if (e.key === "ArrowRight") $("#next-btn").click();
 });
+
+// ---------- site header ----------
+const menuBtn = $("#menu-btn");
+const mobileNav = $("#mobile-nav");
+menuBtn.addEventListener("click", () => {
+  const open = menuBtn.getAttribute("aria-expanded") !== "true";
+  menuBtn.setAttribute("aria-expanded", String(open));
+  mobileNav.hidden = !open;
+});
+$("#year").textContent = String(new Date().getFullYear());
 
 // ---------- init ----------
 buildOptions();
