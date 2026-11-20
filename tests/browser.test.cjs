@@ -86,3 +86,20 @@ test('quota failures keep the latest session note instead of returning an old sa
   element('#note-box').listeners.input();
   assert.equal(app.readSaved('gokyo.note.seoi'), 'Updated session note');
 });
+
+test('homepage shares the site design: tokens, fonts, and navigation to every tool', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  for (const token of ['--background:#0A0A0B', '--card:#141416', '--primary:#D4A853', '--foreground:#F9F6F1']) {
+    assert.ok(html.includes(token), `missing shared design token ${token}`);
+  }
+  assert.match(html, /family=Bebas\+Neue&family=DM\+Sans/);
+  for (const nav of ['site-nav', 'mobile-nav']) {
+    const block = html.split(`<nav class="${nav}"`)[1].split('</nav>')[0];
+    for (const route of ['/', '/belt-calculator', '/competition-weight', '/training-timer', '/gi-size-calculator', '/blog']) {
+      assert.ok(block.includes(`href="${route}"`), `${nav} must link to ${route}`);
+    }
+  }
+  assert.doesNotMatch(html, /style="(?!position:absolute")/, 'use design-system classes instead of inline styles');
+  const script = fs.readFileSync(path.join(__dirname, '../src/main.js'), 'utf8');
+  assert.doesNotMatch(script, /style="/, 'use design-system classes instead of inline styles');
+});

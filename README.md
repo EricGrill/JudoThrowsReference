@@ -28,6 +28,16 @@ The default port is 7100. Set `PORT` or pass `--port` to override it.
 - Follow the navigation links to the existing timer and calculators. These
   routes are provided by the site's existing service behind the production proxy.
 
+## Design
+
+The page uses the same "Midnight Dojo" design as the calculators, timer, and blog
+that share this domain (served from `sites/jiujitsutools` in the BjjChat
+repository): near-black surfaces, gold accent, Bebas Neue headings, DM Sans body
+text, and the same header, navigation, and footer. The tokens at the top of the
+`<style>` block in `index.html` mirror that site's `globals.css`. Change the
+palette, fonts, header, or footer in both places together so the domain keeps
+reading as one website.
+
 ## Video search
 
 `GET /api/search?q=...` fetches YouTube's public results page and returns up to

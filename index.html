@@ -7,7 +7,7 @@
 <meta name="description" content="Explore all 68 Kodokan judo throws. Find technique videos for BJJ, no-gi, and your training context, and keep personal notes in your browser.">
 <link rel="canonical" href="https://jiujitsutools.com/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta name="theme-color" content="#a52b25">
+<meta name="theme-color" content="#0A0A0B">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Jiu Jitsu Tools | The 68 Throws of Kodokan Judo">
 <meta property="og:description" content="A searchable throw reference with technique videos and personal training notes.">
@@ -15,228 +15,360 @@
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400&display=swap" rel="stylesheet">
 <style>
+/* Design system: "Midnight Dojo", shared with the calculators, timer, and blog
+   on this domain. Token names and values mirror that site's globals.css so both
+   services read as one website. Change a value here only together with it. */
 :root{
-  /* primitives */
-  --p-paper: oklch(0.972 0.006 95);
-  --p-paper-2: oklch(0.945 0.008 95);
-  --p-ink: oklch(0.25 0.015 260);
-  --p-ink-2: oklch(0.44 0.015 260);
-  --p-ink-3: oklch(0.58 0.012 260);
-  --p-vermillion: oklch(0.50 0.19 27);
-  --p-vermillion-deep: oklch(0.42 0.16 27);
-  --p-indigo: oklch(0.36 0.07 262);
-  --p-line: oklch(0.88 0.008 95);
-  /* semantic */
-  --surface: var(--p-paper);
-  --surface-2: var(--p-paper-2);
-  --text: var(--p-ink);
-  --text-2: var(--p-ink-2);
-  --text-3: var(--p-ink-3);
-  --accent: var(--p-vermillion);
-  --accent-deep: var(--p-vermillion-deep);
-  --belt: var(--p-indigo);
-  --line: var(--p-line);
-  --radius: 10px;
-  --font-body: "IBM Plex Sans", "Hiragino Sans", sans-serif;
-  --font-display: "Oswald", "Hiragino Sans", sans-serif;
-  --font-jp: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  color-scheme:dark;
+  --background:#0A0A0B;
+  --foreground:#F9F6F1;
+  --card:#141416;
+  --secondary:#1C1C1F;
+  --muted-foreground:#A8A29E;
+  --primary:#D4A853;
+  --primary-dark:#B8923F;
+  --primary-light:#E5C77A;
+  --primary-foreground:#0A0A0B;
+  --destructive:#DC2626;
+  --destructive-soft:#FCA5A5;
+  --border:rgba(212,168,83,.15);
+  --border-strong:rgba(212,168,83,.4);
+  --radius:.75rem;
+  --radius-sm:.5rem;
+  --shell:80rem;
+  --gutter:1rem;
+  --font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-display:"Bebas Neue","Arial Narrow",Impact,sans-serif;
+  --font-jp:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
 }
+@media (min-width:640px){:root{--gutter:1.5rem}}
+@media (min-width:1024px){:root{--gutter:2rem}}
+
 *{box-sizing:border-box;margin:0;padding:0}
-body{font:400 16px/1.65 var(--font-body);color:var(--text);background:var(--surface);-webkit-font-smoothing:antialiased}
-a{color:var(--belt);text-decoration:none}
+html{scroll-behavior:smooth}
+body{font:400 16px/1.6 var(--font-body);color:var(--foreground);background:var(--background);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--primary);text-decoration:none}
 a:hover{text-decoration:underline}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-button,[role=button]{cursor:pointer;font-family:inherit}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+::selection{background:var(--primary);color:var(--primary-foreground)}
+button{cursor:pointer;font-family:inherit}
+svg.icon{width:1rem;height:1rem;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shell{width:100%;max-width:var(--shell);margin:0 auto;padding-left:var(--gutter);padding-right:var(--gutter)}
+.display{font-family:var(--font-display);font-weight:400;letter-spacing:.025em;text-transform:uppercase;line-height:1.1}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
 
-/* ---------- header ---------- */
-header.topbar{
-  border-bottom:3px solid var(--accent);
-  background:var(--surface);
+/* ---------- site header (same bar as the tool pages) ---------- */
+.site-header{position:sticky;top:0;z-index:50;background:rgba(20,20,22,.94);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.site-header .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;height:4rem}
+.brand{display:flex;align-items:center;gap:.5rem;color:var(--foreground)}
+.brand:hover{text-decoration:none}
+.brand .mark{width:2.5rem;height:2.5rem;border-radius:var(--radius-sm);background:var(--primary);color:var(--primary-foreground);
+  display:flex;align-items:center;justify-content:center;transition:transform .15s ease}
+.brand:hover .mark{transform:scale(1.05)}
+.brand .mark svg.icon{width:1.25rem;height:1.25rem}
+.brand{flex-shrink:0}
+.brand .name{font-size:1.5rem;white-space:nowrap}
+.site-nav{display:none;align-items:center;gap:.25rem}
+.site-nav a,.mobile-nav a{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-radius:var(--radius-sm);
+  font-size:.875rem;white-space:nowrap;color:var(--muted-foreground);transition:color .15s ease,background-color .15s ease}
+.site-nav a:hover,.mobile-nav a:hover{color:var(--foreground);background:var(--secondary);text-decoration:none}
+.site-nav a[aria-current],.mobile-nav a[aria-current]{color:var(--primary)}
+.site-header .header-cta{display:none}
+.menu-btn{display:flex;padding:.5rem;border:0;border-radius:var(--radius-sm);background:none;color:var(--foreground)}
+.menu-btn:hover{background:var(--secondary)}
+.menu-btn svg.icon{width:1.5rem;height:1.5rem}
+.menu-btn .when-open,.menu-btn[aria-expanded=true] .when-closed{display:none}
+.menu-btn[aria-expanded=true] .when-open{display:block}
+.mobile-nav{display:grid;gap:.25rem;padding:1rem 0;border-top:1px solid var(--border)}
+.mobile-nav[hidden]{display:none}
+.mobile-nav a{gap:.75rem;padding:.75rem;font-size:1rem}
+.mobile-nav a svg.icon{width:1.25rem;height:1.25rem}
+.mobile-nav .btn{margin-top:.5rem;justify-content:center}
+@media (min-width:1024px){
+  .site-nav{display:flex}
+  .site-header .header-cta{display:inline-flex}
+  .menu-btn,.mobile-nav{display:none}
 }
-.topbar-inner{max-width:1180px;margin:0 auto;padding:28px 24px 22px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
-.wordmark{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.wordmark h1{
-  font:600 clamp(26px,4vw,36px)/1.05 var(--font-display);
-  letter-spacing:0.04em;text-transform:uppercase;color:var(--text);
+/* Six links plus the button need about 1080px on one line. Below 1200px the bar is narrower than that,
+   so the links drop their icons and tighten up instead of wrapping. */
+@media (min-width:1024px) and (max-width:1199.98px){
+  .site-nav{gap:0}
+  .site-nav a{padding:.5rem}
+  .site-nav a svg.icon{display:none}
 }
-.wordmark .subtitle{flex-basis:100%;font-size:1rem;color:var(--text-2)}
-.wordmark .jp{font:400 clamp(18px,2.4vw,24px)/1 var(--font-jp);color:var(--accent)}
-.topbar .meta{margin-left:auto;text-align:right;color:var(--text-2);font-size:13.5px;line-height:1.5}
-.topbar .meta strong{color:var(--text);font-weight:600}
 
-.tools-nav{max-width:1180px;margin:0 auto;padding:0 24px 18px;display:flex;gap:12px 24px;flex-wrap:wrap;font-size:14px}
-.tools-nav [aria-current]{color:var(--accent);font-weight:600}
-
-/* ---------- controls ---------- */
-.controls{max-width:1180px;margin:0 auto;padding:22px 24px 6px;display:grid;gap:14px}
-.controls-row{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
-.field{display:flex;flex-direction:column;gap:6px;min-width:0}
-.field label{font:600 14px/1.2 var(--font-display);letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3)}
-.field input[type=text],.field select,.field textarea{
-  font:400 16px/1.4 var(--font-body);color:var(--text);
-  background:#fff;border:1px solid var(--line);border-radius:8px;
-  padding:10px 12px;transition:border-color .15s ease, box-shadow .15s ease;
-}
-.field input[type=text]:hover,.field select:hover,.field textarea:hover{border-color:oklch(0.78 0.01 95)}
-.field input[type=text]:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px oklch(0.50 0.19 27 / 0.14)}
-.f-filter{width:180px}
-.f-throw{flex:1;min-width:240px}
-.f-throw select{width:100%;height:44px}
-.navbtns{display:flex;gap:8px;align-items:flex-end}
-.btn{
-  font:600 13px/1 var(--font-display);letter-spacing:0.08em;text-transform:uppercase;
-  border:1px solid var(--line);background:#fff;color:var(--text);
-  padding:0 16px;height:44px;border-radius:8px;
-  transition:background .15s ease,border-color .15s ease,color .15s ease;
-}
-.btn:hover{background:var(--surface-2);border-color:oklch(0.78 0.01 95)}
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:2.75rem;padding:0 1rem;
+  font:600 .875rem/1 var(--font-body);color:var(--foreground);background:var(--secondary);
+  border:1px solid var(--border);border-radius:var(--radius-sm);white-space:nowrap;
+  transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,background-color .2s ease}
+.btn:hover{border-color:var(--border-strong);text-decoration:none}
 .btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
-.btn.primary:disabled{opacity:.55;cursor:wait}
-.btn.icon{padding:0 14px;font-size:16px}
+.btn.primary,.mobile-nav a.btn.primary{color:var(--primary-foreground);border-color:transparent;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%)}
+.btn.primary:hover{transform:scale(1.02);box-shadow:0 4px 15px rgba(212,168,83,.3)}
+.btn.primary:disabled{opacity:.55;cursor:wait;transform:none;box-shadow:none}
+.btn.small{min-height:2.25rem}
+
+/* ---------- page hero ---------- */
+.hero{position:relative;overflow:hidden;text-align:center;padding:3rem 0 2.5rem;
+  background:radial-gradient(60rem 22rem at 50% -6rem,rgba(212,168,83,.14),transparent 70%)}
+.hero::before{content:"投技";position:absolute;inset:auto 0 -2.5rem 0;font:400 16rem/1 var(--font-jp);
+  color:rgba(212,168,83,.03);white-space:nowrap;pointer-events:none}
+.hero .shell{position:relative}
+.hero .tile{width:4rem;height:4rem;margin:0 auto 1.5rem;border-radius:1rem;background:var(--primary);color:var(--primary-foreground);
+  display:flex;align-items:center;justify-content:center;font:400 2rem/1 var(--font-jp);box-shadow:0 0 40px rgba(212,168,83,.15)}
+.hero h1{font-size:clamp(2.25rem,5vw,3rem)}
+.hero .lede{max-width:42rem;margin:1rem auto 0;font-size:1.125rem;color:var(--muted-foreground)}
+.stats{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:1.5rem;list-style:none}
+.stats li{padding:.375rem .75rem;border:1px solid var(--border);border-radius:999px;background:var(--card);
+  font-size:.875rem;color:var(--muted-foreground)}
+.stats strong{color:var(--primary);font-weight:700}
+
+/* ---------- cards and fields ---------- */
+.card{min-width:0;background:var(--card);border:1px solid rgba(212,168,83,.1);border-radius:var(--radius);padding:1.5rem}
+@media (min-width:640px){.card{padding:2rem}}
+.card-title{font-size:1.5rem;margin-bottom:1rem}
+.field{display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.field label,.label{font:500 .875rem/1.3 var(--font-body);color:var(--foreground)}
+.hint{font-weight:400;color:var(--muted-foreground)}
+.field input[type=text],.field select,.field textarea{
+  width:100%;font:400 1rem/1.4 var(--font-body);color:var(--foreground);
+  background:var(--secondary);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:.625rem .875rem;min-height:2.75rem;transition:border-color .15s ease,box-shadow .15s ease}
+.field ::placeholder{color:var(--muted-foreground);opacity:.75}
+.field input[type=text]:hover,.field select:hover,.field textarea:hover{border-color:var(--border-strong)}
+.field input[type=text]:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(212,168,83,.18)}
+
+/* ---------- throw picker ---------- */
+.picker{margin-top:.5rem}
+.picker .card{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;padding:1.25rem 1.5rem}
+.f-filter{flex:1 1 12rem}
+@media (min-width:640px){.f-filter{max-width:16rem}}
+.f-throw{flex:3 1 16rem}
+.navbtns{display:flex;gap:.5rem;flex-wrap:wrap}
 
 /* ---------- main layout ---------- */
-main{max-width:1180px;margin:0 auto;padding:18px 24px 64px;display:grid;gap:24px;
+main{flex:1}
+.workspace{display:grid;gap:1.5rem;padding-top:1.5rem;padding-bottom:4rem;align-items:start;
   grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
-@media (max-width:960px){main{grid-template-columns:1fr}}
-
-.panel{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+@media (max-width:1023px){.workspace{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- throw detail ---------- */
-.detail-head{display:flex;gap:20px;align-items:flex-start}
-.kanji{
-  font:400 64px/1.1 var(--font-jp);color:var(--accent);
-  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
-  padding:14px 18px;flex-shrink:0;text-align:center;
-}
-.detail-names{min-width:0}
-.detail-names h2{font:600 clamp(24px,3vw,30px)/1.15 var(--font-display);letter-spacing:0.02em;text-wrap:balance}
-.detail-names .en{color:var(--text-2);font-size:15.5px;margin-top:4px}
-.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.badge{font:600 11px/1 var(--font-display);letter-spacing:0.1em;text-transform:uppercase;
-  padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--text-2)}
-.badge.type{color:#fff;background:var(--belt);border-color:var(--belt)}
-.badge.ban{color:#fff;background:var(--accent);border-color:var(--accent)}
-.ban-note{margin-top:10px;font-size:13.5px;color:var(--accent-deep);font-weight:500}
+.detail-head{display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap}
+.kanji{font:400 clamp(2.5rem,5vw,3.5rem)/1.15 var(--font-jp);color:var(--primary);white-space:nowrap;
+  background:var(--secondary);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;text-align:center}
+.detail-names{flex:1 1 12rem;min-width:0}
+.detail-names h2{font-size:clamp(1.875rem,3vw,2.25rem);text-wrap:balance}
+.detail-names .en{color:var(--muted-foreground);margin-top:.25rem}
+.badges{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.875rem}
+.badge{font:600 .75rem/1 var(--font-body);padding:.375rem .625rem;border-radius:999px;
+  border:1px solid var(--border);background:var(--secondary);color:var(--muted-foreground)}
+.badge.type{color:var(--primary);border-color:var(--border-strong);background:rgba(212,168,83,.1)}
+.badge.ban{color:#fff;background:var(--destructive);border-color:var(--destructive)}
+.ban-note{margin-top:.75rem;font-size:.875rem;color:var(--destructive-soft)}
 
-.section-title{font:600 12px/1 var(--font-display);letter-spacing:0.14em;text-transform:uppercase;
-  color:var(--text-3);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
-.section-title::after{content:"";flex:1;height:1px;background:var(--line)}
-.detail .desc{font-size:16px;line-height:1.7;color:var(--text)}
-.tips{list-style:none;display:grid;gap:8px}
-.tips li{position:relative;padding-left:22px;font-size:14.5px;color:var(--text-2);line-height:1.55}
-.tips li::before{content:"";position:absolute;left:2px;top:8px;width:8px;height:8px;border-radius:2px;
-  background:var(--accent);transform:rotate(45deg)}
-.notes textarea{width:100%;min-height:76px;resize:vertical;font-size:14px}
-.notes .savestate{font-size:12.5px;color:var(--text-3);margin-top:6px;min-height:1.2em}
+.section-title{display:flex;align-items:center;gap:.75rem;margin:1.75rem 0 .75rem;
+  font-size:1.125rem;letter-spacing:.06em;color:var(--primary)}
+.section-title::after{content:"";flex:1;height:1px;background:var(--border)}
+.section-title .hint{font:400 .875rem/1 var(--font-body);letter-spacing:0;text-transform:none}
+.detail .desc{line-height:1.7}
+.tips{list-style:none;display:grid;gap:.5rem}
+.tips li{position:relative;padding-left:1.375rem;font-size:.9375rem;color:var(--muted-foreground);line-height:1.55}
+.tips li::before{content:"";position:absolute;left:.125rem;top:.5rem;width:.5rem;height:.5rem;border-radius:2px;
+  background:var(--primary);transform:rotate(45deg)}
+.notes textarea{min-height:5.5rem;resize:vertical;font-size:.9375rem}
+.notes .savestate{font-size:.8125rem;color:var(--muted-foreground);margin-top:.375rem;min-height:1.2em}
 
 /* ---------- videos ---------- */
-.video-controls{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
-.video-controls .field{flex:1;min-width:220px}
-.query-preview{overflow-wrap:anywhere;font-size:13px;color:var(--text-3);margin-top:10px}
-.query-preview code{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:12.5px;color:var(--text-2)}
-.video-status{margin-top:16px;font-size:14px;color:var(--text-2);display:none}
+.video-controls{display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
+.video-controls .field{flex:1 1 14rem}
+.query-preview{overflow-wrap:anywhere;font-size:.8125rem;color:var(--muted-foreground);margin-top:.75rem}
+.query-preview code{font:400 .8125rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:var(--secondary);border:1px solid var(--border);border-radius:6px;padding:2px 7px;color:var(--foreground)}
+.video-status{margin-top:1rem;font-size:.875rem;color:var(--muted-foreground);display:none}
 .video-status.show{display:block}
-.video-status.error{color:var(--accent-deep)}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);
+.video-status strong{color:var(--foreground)}
+.video-status.error{color:var(--destructive-soft)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--primary);
   border-radius:50%;vertical-align:-2px;margin-right:8px;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-.video-grid{margin-top:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr))}
-.vcard{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface-2)}
+.video-grid{margin-top:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,17.5rem),1fr))}
+.video-grid:empty{display:none}
+.vcard{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--secondary);
+  transition:border-color .3s ease,box-shadow .3s ease}
+.vcard:hover{border-color:var(--border-strong);box-shadow:0 0 20px rgba(212,168,83,.15)}
 .vcard .frame{aspect-ratio:16/9;background:#000}
 .vcard iframe{width:100%;height:100%;border:0;display:block}
-.vcard .vmeta{padding:10px 12px}
-.vcard .vtitle{font-size:13.5px;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.vcard .vtitle a{color:var(--text)}
-.vcard .vchan{font-size:12px;color:var(--text-3);margin-top:4px}
-.yt-fallback{margin-top:16px;padding:14px 16px;border:1px dashed var(--line);border-radius:var(--radius);
-  background:var(--surface-2);font-size:14px;color:var(--text-2)}
+.vcard .vmeta{padding:.625rem .75rem}
+.vcard .vtitle{font-size:.875rem;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vcard .vtitle a{color:var(--foreground)}
+.vcard .vchan{font-size:.75rem;color:var(--muted-foreground);margin-top:.25rem}
+.yt-fallback{margin-top:1rem;padding:.875rem 1rem;border:1px dashed var(--border-strong);border-radius:var(--radius);
+  background:var(--secondary);font-size:.875rem;color:var(--muted-foreground)}
 .yt-fallback a{font-weight:600}
 
-footer{max-width:1180px;margin:0 auto;padding:0 24px 48px;color:var(--text-3);font-size:13px;line-height:1.6}
-@media (max-width:640px){
-  .kanji{font-size:44px;padding:10px 14px}
-  .topbar .meta{margin-left:0;text-align:left}
-  .f-filter{width:100%}
-  .f-throw{min-width:0;flex-basis:100%}
-  .detail-head{flex-wrap:wrap;gap:14px}
-  .panel{padding:18px}
-  .video-controls .field{min-width:0;flex-basis:100%}
-  .topbar-inner,.controls,main{padding-left:16px;padding-right:16px}
-  .wordmark{gap:10px}
-}
+/* ---------- site footer (same footer as the tool pages) ---------- */
+.site-footer{background:var(--card);border-top:1px solid var(--border);font-size:.875rem;color:var(--muted-foreground)}
+.site-footer .cols{display:grid;gap:2rem;padding-top:3rem;padding-bottom:3rem}
+@media (min-width:768px){.site-footer .cols{grid-template-columns:2fr 1fr 1fr}}
+.site-footer .brand{margin-bottom:1rem}
+.site-footer .brand .name{font-size:1.25rem}
+.site-footer p{max-width:34rem}
+.site-footer p + p{margin-top:.75rem}
+.site-footer h2{font-size:1.125rem;color:var(--foreground);margin-bottom:1rem}
+.site-footer ul{list-style:none;display:grid;gap:.5rem}
+.site-footer li a,.site-footer .legal a{color:var(--muted-foreground);transition:color .15s ease}
+.site-footer li a:hover,.site-footer .legal a:hover{color:var(--foreground);text-decoration:none}
+.site-footer .legal{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem 1.5rem;
+  padding-top:2rem;padding-bottom:2rem;border-top:1px solid var(--border)}
+.site-footer .legal nav{display:flex;gap:1.5rem}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="wordmark">
-      <h1>Jiu Jitsu Tools</h1>
-      <span class="subtitle">The 68 Throws of Kodokan Judo</span>
-      <span class="jp">柔道・投げ技</span>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-throws" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+  <symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 6h8M16 14v4M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+</svg>
+
+<header class="site-header">
+  <div class="shell">
+    <div class="bar">
+      <a class="brand" href="/">
+        <span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+        <span class="name display">JiuJitsu Tools</span>
+      </a>
+      <nav class="site-nav" aria-label="Training tools">
+        <a href="/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-throws"/></svg>Throws</a>
+        <a href="/belt-calculator"><svg class="icon" aria-hidden="true"><use href="#i-calculator"/></svg>Belt Calculator</a>
+        <a href="/competition-weight"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg>Weight Calculator</a>
+        <a href="/training-timer"><svg class="icon" aria-hidden="true"><use href="#i-timer"/></svg>Training Timer</a>
+        <a href="/gi-size-calculator"><svg class="icon" aria-hidden="true"><use href="#i-ruler"/></svg>Gi Sizing</a>
+        <a href="/blog"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Blog</a>
+      </nav>
+      <a class="btn primary small header-cta" href="https://bjjchat.com" target="_blank" rel="noopener noreferrer">Try BJJChat Free</a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg class="icon when-closed" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="icon when-open" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
     </div>
-    <div class="meta">
-      <strong>40</strong> Gokyo throws &nbsp;·&nbsp; <strong>8</strong> preserved &nbsp;·&nbsp; <strong>20</strong> newly accepted<br>
-      Pick a throw, add context, watch it done.
-    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Training tools" hidden>
+      <a href="/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-throws"/></svg>Throws</a>
+      <a href="/belt-calculator"><svg class="icon" aria-hidden="true"><use href="#i-calculator"/></svg>Belt Calculator</a>
+      <a href="/competition-weight"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg>Weight Calculator</a>
+      <a href="/training-timer"><svg class="icon" aria-hidden="true"><use href="#i-timer"/></svg>Training Timer</a>
+      <a href="/gi-size-calculator"><svg class="icon" aria-hidden="true"><use href="#i-ruler"/></svg>Gi Sizing</a>
+      <a href="/blog"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Blog</a>
+      <a class="btn primary" href="https://bjjchat.com" target="_blank" rel="noopener noreferrer">Try BJJChat Free</a>
+    </nav>
   </div>
-  <nav class="tools-nav" aria-label="Training tools">
-    <a href="/" aria-current="page">Throw reference</a>
-    <a href="/training-timer">Training timer</a>
-    <a href="/belt-calculator">Belt calculator</a>
-    <a href="/competition-weight">Competition weight</a>
-    <a href="/gi-size-calculator">Gi size</a>
-  </nav>
 </header>
 
-<div class="controls">
-  <div class="controls-row">
-    <div class="field f-filter">
-      <label for="filter">Filter list</label>
-      <input type="text" id="filter" placeholder="e.g. seoi, hip, counter…" autocomplete="off">
+<main>
+  <section class="hero">
+    <div class="shell">
+      <div class="tile" lang="ja" aria-hidden="true">投</div>
+      <h1 class="display">The 68 Throws of Kodokan Judo</h1>
+      <p class="lede">Pick a throw, add your context, and watch it done. Keep your own notes as you study.</p>
+      <ul class="stats">
+        <li><strong>40</strong> Gokyo throws</li>
+        <li><strong>8</strong> preserved</li>
+        <li><strong>20</strong> newly accepted</li>
+      </ul>
     </div>
-    <div class="field f-throw">
-      <label for="throw-select">Throw</label>
-      <select id="throw-select" size="1"></select>
-    </div>
-    <div class="navbtns">
-      <button class="btn icon" id="prev-btn" title="Previous throw" aria-label="Previous throw">Previous</button>
-      <button class="btn icon" id="next-btn" title="Next throw" aria-label="Next throw">Next</button>
-      <button class="btn" id="random-btn">Random</button>
+  </section>
+
+  <div class="shell picker">
+    <div class="card">
+      <div class="field f-filter">
+        <label for="filter">Filter list</label>
+        <input type="text" id="filter" placeholder="e.g. seoi, hip, counter…" autocomplete="off">
+      </div>
+      <div class="field f-throw">
+        <label for="throw-select">Throw</label>
+        <select id="throw-select" size="1"></select>
+      </div>
+      <div class="navbtns">
+        <button class="btn" id="prev-btn" type="button" title="Previous throw">Previous</button>
+        <button class="btn" id="next-btn" type="button" title="Next throw">Next</button>
+        <button class="btn" id="random-btn" type="button">Random</button>
+      </div>
     </div>
   </div>
-</div>
 
-<main>
-  <!-- throw detail -->
-  <section class="panel detail" id="detail" aria-live="polite"></section>
+  <div class="shell workspace">
+    <!-- throw detail -->
+    <section class="card detail" id="detail" aria-live="polite"></section>
 
-  <!-- videos -->
-  <section class="panel" id="videos-panel">
-    <h3 class="section-title" style="margin-top:0">Videos</h3>
-    <div class="video-controls">
-      <div class="field">
-        <label for="context">Your context (optional)</label>
-        <input type="text" id="context" maxlength="160" placeholder='e.g. "for BJJ", "Neil Adams", "vs lefty", "no gi"…' autocomplete="off">
+    <!-- videos -->
+    <section class="card" id="videos-panel">
+      <h2 class="card-title display">Videos</h2>
+      <div class="video-controls">
+        <div class="field">
+          <label for="context">Your context <span class="hint">(optional)</span></label>
+          <input type="text" id="context" maxlength="160" placeholder='e.g. "for BJJ", "Neil Adams", "vs lefty", "no gi"…' autocomplete="off">
+        </div>
+        <button class="btn primary" id="find-btn" type="button">Find videos</button>
       </div>
-      <button class="btn primary" id="find-btn">Find videos</button>
-    </div>
-    <div class="query-preview" id="query-preview"></div>
-    <div class="video-status" id="video-status" role="status" aria-live="polite"></div>
-    <div class="video-grid" id="video-grid"></div>
-    <div class="yt-fallback" id="yt-fallback" hidden></div>
-  </section>
+      <div class="query-preview" id="query-preview"></div>
+      <div class="video-status" id="video-status" role="status" aria-live="polite"></div>
+      <div class="video-grid" id="video-grid"></div>
+      <div class="yt-fallback" id="yt-fallback" hidden></div>
+    </section>
+  </div>
 </main>
 
-<footer>
-  <p><strong>Jiu Jitsu Tools</strong> · Study the technique, bring your questions to the mat.</p>
-  <p>Throws follow the Kodokan classification: the Gokyo-no-waza (5 sets of 8), the 8 habukareta-waza preserved from the 1895 list, and the 20 shinmeisho-no-waza accepted in 1982 and 1997. Videos are fetched live from YouTube search results; your notes are stored only in this browser.</p>
-  <p>Technique classification: <a href="https://en.wikipedia.org/wiki/List_of_Kodokan_judo_techniques">List of Kodokan judo techniques</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>). <a href="https://github.com/EricGrill/JudoThrowsReference">Source code</a>.</p>
+<footer class="site-footer">
+  <div class="shell cols">
+    <div>
+      <a class="brand" href="/">
+        <span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+        <span class="name display">JiuJitsu Tools</span>
+      </a>
+      <p>Study the technique, bring your questions to the mat. Throws follow the Kodokan classification: the Gokyo-no-waza (5 sets of 8), the 8 habukareta-waza preserved from the 1895 list, and the 20 shinmeisho-no-waza accepted in 1982 and 1997.</p>
+      <p>Videos are fetched live from YouTube search results; your notes are stored only in this browser.</p>
+      <p>Technique classification: <a href="https://en.wikipedia.org/wiki/List_of_Kodokan_judo_techniques">List of Kodokan judo techniques</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>). <a href="https://github.com/EricGrill/JudoThrowsReference">Source code</a>.</p>
+      <p>Powered by <a href="https://bjjchat.com" target="_blank" rel="noopener noreferrer">BJJChat</a></p>
+    </div>
+    <div>
+      <h2 class="display">Tools</h2>
+      <ul>
+        <li><a href="/">Throw Reference</a></li>
+        <li><a href="/belt-calculator">Belt Calculator</a></li>
+        <li><a href="/competition-weight">Competition Weight</a></li>
+        <li><a href="/training-timer">Training Timer</a></li>
+        <li><a href="/gi-size-calculator">Gi Size Calculator</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="display">Links</h2>
+      <ul>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="https://bjjchat.com" target="_blank" rel="noopener noreferrer">BJJChat.com</a></li>
+        <li><a href="https://bjjchat.com/schools" target="_blank" rel="noopener noreferrer">Find a Gym</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="shell">
+    <div class="legal">
+      <p>&copy; <span id="year">2026</span> JiuJitsu Tools</p>
+      <nav aria-label="Legal">
+        <a href="https://bjjchat.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+        <a href="https://bjjchat.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+      </nav>
+    </div>
+  </div>
 </footer>
 
 <script type="module" src="./src/main.js"></script>
