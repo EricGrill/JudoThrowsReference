@@ -1,0 +1,84 @@
+name: Test and deploy reference
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - run: npm test
+      - run: npm run check
+      - run: sh -n deploy/activate.sh && sh -n deploy/receive.sh
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: reference-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Publish tested main commit
+        env:
+          RELEASE: ${{ github.sha }}
+          DEPLOY_KEY: ${{ secrets.REFERENCE_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.REFERENCE_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$DEPLOY_KEY"
+          test -n "$KNOWN_HOSTS"
+          umask 077
+          credentials=$(mktemp -d)
+          trap 'rm -rf "$credentials"' EXIT
+          printf '%s\n' "$DEPLOY_KEY" > "$credentials/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$credentials/known_hosts"
+          ssh -T -i "$credentials/key" \
+            -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$credentials/known_hosts" \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=4 \
+            root@157.230.57.215 "$RELEASE"
+      - name: Verify public release and existing tools
+        env:
+          RELEASE: ${{ github.sha }}
+        run: |
+          set -eu
+          response=$(mktemp)
+          trap 'rm -f "$response"' EXIT
+          matched=false
+          for attempt in $(seq 1 10); do
+            if curl --fail --silent --show-error --max-time 20 \
+              "https://jiujitsutools.com/?release=$RELEASE" -o "$response" \
+              && cmp -s index.html "$response"; then
+              matched=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$matched" != true ]; then
+            echo 'Public HTML does not match the tested commit' >&2
+            exit 1
+          fi
+          for route in belt-calculator competition-weight training-timer gi-size-calculator blog; do
+            curl --fail --silent --show-error --retry 3 --max-time 20 \
+              "https://jiujitsutools.com/$route" -o /dev/null
+          done
