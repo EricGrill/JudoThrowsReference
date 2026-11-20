@@ -70,10 +70,11 @@ svg.icon{width:1rem;height:1rem;flex-shrink:0;fill:none;stroke:currentColor;stro
   display:flex;align-items:center;justify-content:center;transition:transform .15s ease}
 .brand:hover .mark{transform:scale(1.05)}
 .brand .mark svg.icon{width:1.25rem;height:1.25rem}
-.brand .name{font-size:1.5rem}
+.brand{flex-shrink:0}
+.brand .name{font-size:1.5rem;white-space:nowrap}
 .site-nav{display:none;align-items:center;gap:.25rem}
 .site-nav a,.mobile-nav a{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-radius:var(--radius-sm);
-  font-size:.875rem;color:var(--muted-foreground);transition:color .15s ease,background-color .15s ease}
+  font-size:.875rem;white-space:nowrap;color:var(--muted-foreground);transition:color .15s ease,background-color .15s ease}
 .site-nav a:hover,.mobile-nav a:hover{color:var(--foreground);background:var(--secondary);text-decoration:none}
 .site-nav a[aria-current],.mobile-nav a[aria-current]{color:var(--primary)}
 .site-header .header-cta{display:none}
@@ -91,6 +92,13 @@ svg.icon{width:1rem;height:1rem;flex-shrink:0;fill:none;stroke:currentColor;stro
   .site-nav{display:flex}
   .site-header .header-cta{display:inline-flex}
   .menu-btn,.mobile-nav{display:none}
+}
+/* Six links plus the button need about 1080px on one line. Below 1200px the bar is narrower than that,
+   so the links drop their icons and tighten up instead of wrapping. */
+@media (min-width:1024px) and (max-width:1199.98px){
+  .site-nav{gap:0}
+  .site-nav a{padding:.5rem}
+  .site-nav a svg.icon{display:none}
 }
 
 /* ---------- buttons ---------- */
