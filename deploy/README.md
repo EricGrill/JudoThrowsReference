@@ -86,7 +86,7 @@ npm run check
 release=$(git rev-parse HEAD)
 ssh bjjchat-prod "mkdir -p /opt/jiujitsu-reference/releases/$release"
 git archive "$release" | ssh bjjchat-prod "tar -xf - -C /opt/jiujitsu-reference/releases/$release"
-ssh bjjchat-prod "cd /opt/jiujitsu-reference/releases/$release && sh deploy/activate.sh $release"
+ssh bjjchat-prod "cd /opt/jiujitsu-reference/releases/$release && flock -w 600 /opt/jiujitsu-reference/deploy.lock sh deploy/activate.sh $release"
 ```
 
 The activation script builds the release, checks the new app, validates nginx, reloads
@@ -97,7 +97,8 @@ copied into the image or source repository.
 
 ## Rollback
 
-For later releases, activate the prior commit from its retained release directory.
+For later releases, activate the prior commit from its retained release directory,
+using the same deployment lock shown in the manual recovery command.
 The image and source remain tagged by commit. To undo the initial migration, remove
 only `/opt/bjjchat/nginx/conf.d/00-jiujitsutools-reference.conf`, validate nginx, and
 reload it. The unchanged legacy configuration and container resume serving the root.
