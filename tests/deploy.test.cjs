@@ -17,6 +17,7 @@ function deploymentHarness(t, scenario) {
   const bin = path.join(temporary, 'bin');
   const log = path.join(temporary, 'calls.log');
   const activeApp = path.join(temporary, 'active-app');
+  const smokeMarker = path.join(temporary, 'first-smoke-completed');
   fs.mkdirSync(bin, { recursive: true });
   for (const release of [PREVIOUS, NEXT]) {
     const deployment = path.join(base, 'releases', release, 'deploy');
@@ -53,6 +54,11 @@ exit 0`);
   executable('curl', `
 printf '%s|%s|curl %s\\n' "$RELEASE" "$PWD" "$*" >> "$MOCK_LOG"
 if [ "$MOCK_SCENARIO" = smoke-failure ]; then exit 22; fi
+if [ "$MOCK_SCENARIO" = delayed-reload ] && [ ! -f "$MOCK_SMOKE_MARKER" ]; then
+  touch "$MOCK_SMOKE_MARKER"
+  printf '%s\\n' '<html><title>Legacy training tools</title></html>'
+  exit 0
+fi
 printf '%s\\n' '<html><title>Jiu Jitsu Tools</title></html>'`);
   executable('sleep', 'exit 0');
 
@@ -69,6 +75,7 @@ printf '%s\\n' '<html><title>Jiu Jitsu Tools</title></html>'`);
           MOCK_SCENARIO: scenario,
           MOCK_NEXT: NEXT,
           MOCK_ACTIVE_APP: activeApp,
+          MOCK_SMOKE_MARKER: smokeMarker,
         },
         encoding: 'utf8', timeout: 5000,
       });
@@ -133,4 +140,21 @@ test('repeated successful activation keeps separate immutable backup directories
   assert.equal(fs.readFileSync(path.join(newBackup, 'previous-release'), 'utf8'), `${NEXT}\n`);
   assert.equal(fs.readFileSync(path.join(originalBackup, 'previous.conf'), 'utf8'), 'previous proxy configuration\n');
   assert.equal(fs.readFileSync(path.join(originalBackup, 'previous-release'), 'utf8'), `${PREVIOUS}\n`);
+});
+
+
+test('delayed nginx reload retries legacy content and publishes without rollback', (t) => {
+  const app = deploymentHarness(t, 'delayed-reload');
+  const result = app.run();
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /Published/);
+  assert.equal(fs.readFileSync(app.config, 'utf8'), 'new proxy configuration\n');
+  assert.equal(fs.readFileSync(app.activeApp, 'utf8'), `${NEXT}\n`);
+  assert.equal(fs.readFileSync(path.join(app.base, 'current-release'), 'utf8'), `${NEXT}\n`);
+  const calls = app.calls();
+  assert.equal(calls.filter((line) => line.includes('|curl ')).length, 2);
+  assert.equal(calls.filter((line) => line.endsWith('exec bjj-nginx nginx -s reload')).length, 1);
+  assert.equal(calls.filter((line) => line.endsWith('compose -f deploy/compose.yml up -d')).length, 1);
+  assert.equal(calls.some((line) => line.startsWith(`${PREVIOUS}|`)), false);
 });

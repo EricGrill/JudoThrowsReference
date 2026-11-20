@@ -45,10 +45,19 @@ restore_proxy() {
 cp deploy/00-jiujitsutools-reference.conf "$config"
 if ! docker exec bjj-nginx nginx -t; then restore_proxy; exit 1; fi
 if ! docker exec bjj-nginx nginx -s reload; then restore_proxy; exit 1; fi
-if ! curl --fail --silent --show-error --retry 3 --retry-delay 2 --max-time 15 https://jiujitsutools.com/ | grep -q 'Jiu Jitsu Tools'; then
-    restore_proxy
-    echo 'Public smoke test failed; previous proxy restored' >&2
-    exit 1
-fi
+attempt=0
+while :; do
+    if response=$(curl --fail --silent --show-error --max-time 10 https://jiujitsutools.com/) && printf '%s' "$response" | grep -q 'Jiu Jitsu Tools'; then
+        break
+    fi
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 10 ]; then
+        restore_proxy
+        echo 'Public smoke test failed; previous proxy restored' >&2
+        exit 1
+    fi
+    # nginx reload is asynchronous; allow the new workers to take traffic.
+    sleep 2
+done
 printf '%s\n' "$release" > "$base/current-release"
 echo "Published $release at https://jiujitsutools.com/"
